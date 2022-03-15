@@ -40,19 +40,17 @@ contract TheFollowerToken is ERC20 {
         assembly {
             chainId := chainid()
         }
-
         bytes32 eip712DomainHash = keccak256(
             abi.encode(
                 keccak256(
                     "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
                 ),
-                keccak256(bytes("Ricardian Fabric")),
+                keccak256(bytes("TheFollowerToken")),
                 keccak256(bytes("1")),
                 chainId,
                 address(this)
             )
         );
-
         bytes32 hashStruct = keccak256(
             abi.encode(
                 keccak256(
@@ -68,7 +66,6 @@ contract TheFollowerToken is ERC20 {
         bytes32 hash = keccak256(
             abi.encodePacked("\x19\x01", eip712DomainHash, hashStruct)
         );
-
         return ecrecover(hash, v, r, s);
     }
 
