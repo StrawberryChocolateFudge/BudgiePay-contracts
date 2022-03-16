@@ -20,7 +20,7 @@ async function main() {
   const thefollowerToken = await TheFollowerToken.deploy(
     ethers.utils.parseEther(initialSupply),
     ethers.utils.parseEther(maxMinted),
-    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+    "0x034Ce9e3B846f507298b9a22D5999547aeE1631c"
   );
 
   await thefollowerToken.deployed();
