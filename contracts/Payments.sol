@@ -1,11 +1,10 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "hardhat/console.sol";
 struct Payment {
     uint256 id;
-    uint8 paymentType; // 0 for eth and 1 for token
     address from;
     bytes32 fromTwitterId;
     bytes32 toTwitterId;
@@ -16,11 +15,9 @@ struct Payment {
 }
 
 contract Payments is ReentrancyGuard {
-    using SafeERC20 for IERC20;
     using Address for address payable;
     address private signer;
     address private owner;
-    IERC20 private token;
     // paymentId => Payment
     mapping(uint256 => Payment) private payments;
     uint256 private paymentIndex;
@@ -32,13 +29,10 @@ contract Payments is ReentrancyGuard {
 
     uint256 private totalEthBalance;
     uint256 private currentEthBalance;
-    uint256 private totalTokenBalance;
-    uint256 private currentTokenBalance;
 
-    constructor(address signerAddress, IERC20 _token) {
+    constructor(address signerAddress) {
         signer = signerAddress;
         owner = msg.sender;
-        token = _token;
     }
 
     function setSigner(address to) external {
@@ -50,20 +44,17 @@ contract Payments is ReentrancyGuard {
         uint8 v,
         bytes32 r,
         bytes32 s,
-        uint8 paymentType,
         address from,
         string calldata fromTwitterId,
         string calldata toTwitterId,
         uint256 amount
     ) public view returns (address) {
         bytes32 domain = getDomainHash();
-
         bytes32 hashStruct = keccak256(
             abi.encode(
                 keccak256(
-                    "doc(uint8 paymentType,address from,string fromTwitterId,string toTwitterId,uint256 amount)"
+                    "doc(address from,string fromTwitterId,string toTwitterId,uint256 amount)"
                 ),
-                keccak256(abi.encode(paymentType)),
                 keccak256(abi.encode(from)),
                 keccak256(bytes(fromTwitterId)),
                 keccak256(bytes(toTwitterId)),
@@ -74,7 +65,6 @@ contract Payments is ReentrancyGuard {
         bytes32 hash = keccak256(
             abi.encodePacked("\x19\x01", domain, hashStruct)
         );
-
         return ecrecover(hash, v, r, s);
     }
 
@@ -138,7 +128,6 @@ contract Payments is ReentrancyGuard {
             v,
             r,
             s,
-            0,
             from,
             fromTwitterId,
             toTwitterId,
@@ -151,39 +140,10 @@ contract Payments is ReentrancyGuard {
         // The ETH is transfered to this contract
         totalEthBalance += msg.value;
         currentEthBalance += msg.value;
-        createPayment(0, from, fromTwitterId, toTwitterId, amount);
-    }
-
-    function payToken(
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        address from,
-        string calldata fromTwitterId,
-        string calldata toTwitterId,
-        uint256 amount
-    ) external {
-        require(msg.sender == from, "Invalid signature");
-        address _signer = verifyPaymentSignature(
-            v,
-            r,
-            s,
-            1,
-            from,
-            fromTwitterId,
-            toTwitterId,
-            amount
-        );
-        require(_signer == signer, "Invalid Signer");
-        // If I pay with tokens, I transfer those to this contract
-        token.safeTransferFrom(from, address(this), amount);
-        totalTokenBalance += amount;
-        currentTokenBalance += amount;
-        createPayment(1, from, fromTwitterId, toTwitterId, amount);
+        createPayment(from, fromTwitterId, toTwitterId, amount);
     }
 
     function createPayment(
-        uint8 paymentType,
         address from,
         string calldata fromTwitterId,
         string calldata toTwitterId,
@@ -194,7 +154,6 @@ contract Payments is ReentrancyGuard {
         bytes32 toTwitterIdHash = keccak256(bytes(toTwitterId));
         Payment memory payment = Payment({
             id: paymentIndex,
-            paymentType: paymentType,
             from: from,
             fromTwitterId: fromTwitterIdHash,
             toTwitterId: toTwitterIdHash,
@@ -237,22 +196,11 @@ contract Payments is ReentrancyGuard {
 
         // Do the withdraw
         payments[id].claimed = true;
-        if (payments[id].paymentType == 0) {
-            // The contract must have enough balance, this should never throw
-            require(
-                currentEthBalance >= payments[id].amount,
-                "Not enough balance"
-            );
-            payable(from).sendValue(payments[id].amount);
-            currentEthBalance -= payments[id].amount;
-        } else {
-            require(
-                currentTokenBalance >= payments[id].amount,
-                "Not enough tokens"
-            );
-            token.safeTransfer(from, payments[id].amount);
-            currentTokenBalance -= payments[id].amount;
-        }
+
+        // The contract must have enough balance, this should never throw
+        require(currentEthBalance >= payments[id].amount, "Not enough balance");
+        payable(from).sendValue(payments[id].amount);
+        currentEthBalance -= payments[id].amount;
     }
 
     function refund(
@@ -262,7 +210,7 @@ contract Payments is ReentrancyGuard {
         uint256 id,
         string calldata fromTwitterId,
         address from
-    ) external {
+    ) external nonReentrant {
         require(msg.sender == from, "Invalid sender");
         address _signer = verifyRefundSignature(
             v,
@@ -283,21 +231,9 @@ contract Payments is ReentrancyGuard {
 
         payments[id].refunded = true;
 
-        if (payments[id].paymentType == 0) {
-            require(
-                currentEthBalance >= payments[id].amount,
-                "Not Enough Blance"
-            );
-            payable(from).sendValue(payments[id].amount);
-            currentEthBalance -= payments[id].amount;
-        } else {
-            require(
-                currentTokenBalance >= payments[id].amount,
-                "Not enough tokens"
-            );
-            token.safeTransfer(from, payments[id].amount);
-            currentTokenBalance -= payments[id].amount;
-        }
+        require(currentEthBalance >= payments[id].amount, "Not Enough Blance");
+        payable(from).sendValue(payments[id].amount);
+        currentEthBalance -= payments[id].amount;
     }
 
     function getDomainHash() internal view returns (bytes32) {
@@ -311,11 +247,43 @@ contract Payments is ReentrancyGuard {
                     keccak256(
                         "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
                     ),
-                    keccak256(bytes("TheFollowerToken")),
+                    keccak256(bytes("BudgiePay")),
                     keccak256(bytes("1")),
                     chainId,
                     address(this)
                 )
             );
+    }
+
+    function getPaymentIdsFrom(string calldata fromTwitterId)
+        external
+        view
+        returns (uint256[] memory)
+    {
+        return fromPayments[keccak256(bytes(fromTwitterId))];
+    }
+
+    function getPaymentIdsTo(string calldata toTwitterId)
+        external
+        view
+        returns (uint256[] memory)
+    {
+        return toPayments[keccak256(bytes(toTwitterId))];
+    }
+
+    function getPaymentById(uint256 id) external view returns (Payment memory) {
+        return payments[id];
+    }
+
+    function getLastPaymentId() external view returns (uint256) {
+        return paymentIndex;
+    }
+
+    function getTotalAndCurrentBalance()
+        external
+        view
+        returns (uint256, uint256)
+    {
+        return (totalEthBalance, currentEthBalance);
     }
 }
