@@ -173,5 +173,85 @@ describe("Payments", function () {
 
     const payment = await payments.getPaymentById("1");
     expect(payment.refunded).equal(true);
+    let hasError = false;
+    try {
+      const withdrawSignature = signWithdraw(
+        "2",
+        toTwitterId,
+        signer1.address,
+        chainId,
+        payments.address,
+        signerPrivatekey
+      );
+      await payments
+        .connect(signer1)
+        .withdraw(
+          withdrawSignature.v,
+          withdrawSignature.r,
+          withdrawSignature.s,
+          "2",
+          toTwitterId,
+          signer1.address
+        );
+    } catch (err) {
+      hasError = true;
+      // Invalid ID
+      console.log(err);
+    }
+    expect(hasError).to.equal(true);
+    hasError = false;
+    try {
+      const withdrawSignature = signWithdraw(
+        "2",
+        toTwitterId,
+        signer1.address,
+        chainId,
+        payments.address,
+        signerPrivatekey
+      );
+      await payments
+        .connect(signer1)
+        .withdraw(
+          withdrawSignature.v,
+          withdrawSignature.r,
+          withdrawSignature.s,
+          "1",
+          toTwitterId,
+          signer1.address
+        );
+    } catch (err) {
+      hasError = true;
+      // Invalid Signer
+      console.log(err);
+    }
+    expect(hasError).to.equal(true);
+
+    hasError = false;
+    try {
+      const refund = signRefund(
+        "1",
+        fromTwitterId,
+        signer2.address,
+        chainId,
+        payments.address,
+        signerPrivatekey
+      );
+
+      await payments
+        .connect(signer2)
+        .refund(
+          refund.v,
+          refund.r,
+          refund.s,
+          "1",
+          fromTwitterId,
+          signer2.address
+        );
+    } catch (err) {
+      hasError = true;
+      // Invalid ID
+      console.log(err);
+    }
+    expect(hasError).to.equal(true);
   });
 });
