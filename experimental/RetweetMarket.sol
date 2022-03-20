@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // The retweet market allows a user to place a bounty on tweets,
 // if a user retweeted them, he can withdraw the tokens as reward.
-
+// WIP MAYBE IN THE FUTURE...
 struct RetweetBounty {
     uint256 id;
     bool active;
