@@ -88,7 +88,7 @@ describe("BudgieCoin", function () {
       await budgiecoin.connect(signer3).balanceOf(signer3.address)
     ).to.equal(ethers.utils.parseEther("0"));
     try {
-      await budgiecoin.mintFollowerToken(
+      await budgiecoin.mintBudgieCoin(
         ecdsaSign.v,
         ecdsaSign.r,
         ecdsaSign.s,
@@ -107,7 +107,7 @@ describe("BudgieCoin", function () {
     errOccured = false;
 
     try {
-      await budgiecoin.mintFollowerToken(
+      await budgiecoin.mintBudgieCoin(
         ecdsaSign.v,
         ecdsaSign.r,
         ecdsaSign.s,
@@ -125,7 +125,7 @@ describe("BudgieCoin", function () {
 
     await budgiecoin
       .connect(signer3)
-      .mintFollowerToken(
+      .mintBudgieCoin(
         ecdsaSign.v,
         ecdsaSign.r,
         ecdsaSign.s,
@@ -143,7 +143,7 @@ describe("BudgieCoin", function () {
     try {
       await budgiecoin
         .connect(signer3)
-        .mintFollowerToken(
+        .mintBudgieCoin(
           ecdsaSign.v,
           ecdsaSign.r,
           ecdsaSign.s,
@@ -172,7 +172,7 @@ describe("BudgieCoin", function () {
     try {
       await budgiecoin
         .connect(signer3)
-        .mintFollowerToken(
+        .mintBudgieCoin(
           maxMintedV,
           maxMintedR,
           maxMintedS,
