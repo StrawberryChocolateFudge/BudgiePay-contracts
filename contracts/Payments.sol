@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "hardhat/console.sol";
 struct Payment {
     uint256 id;
@@ -16,6 +17,7 @@ struct Payment {
 
 contract Payments is ReentrancyGuard {
     using Address for address payable;
+    using SafeMath for uint256;
     address private signer;
     address private owner;
     // paymentId => Payment
@@ -29,6 +31,8 @@ contract Payments is ReentrancyGuard {
 
     uint256 private totalEthBalance;
     uint256 private currentEthBalance;
+    uint256 private constant FEEBASE = 10000;
+    uint256 private constant FEE = 20;
 
     constructor(address signerAddress) {
         signer = signerAddress;
@@ -199,7 +203,9 @@ contract Payments is ReentrancyGuard {
 
         // The contract must have enough balance, this should never throw
         require(currentEthBalance >= payments[id].amount, "Not enough balance");
-        payable(from).sendValue(payments[id].amount);
+        (uint256 _amount, uint256 _fee) = calculateFee(payments[id].amount);
+        payable(from).sendValue(_amount);
+        payable(signer).sendValue(_fee);
         currentEthBalance -= payments[id].amount;
     }
 
@@ -232,7 +238,9 @@ contract Payments is ReentrancyGuard {
         payments[id].refunded = true;
 
         require(currentEthBalance >= payments[id].amount, "Not Enough Blance");
-        payable(from).sendValue(payments[id].amount);
+        (uint256 _amount, uint256 _fee) = calculateFee(payments[id].amount);
+        payable(from).sendValue(_amount);
+        payable(signer).sendValue(_fee);
         currentEthBalance -= payments[id].amount;
     }
 
@@ -253,6 +261,15 @@ contract Payments is ReentrancyGuard {
                     address(this)
                 )
             );
+    }
+
+    function calculateFee(uint256 amount)
+        public
+        pure
+        returns (uint256, uint256)
+    {
+        uint256 fee = (amount.mul(FEE)).div(FEEBASE);
+        return (amount.sub(fee), fee);
     }
 
     function getPaymentIdsFrom(string calldata fromTwitterId)
