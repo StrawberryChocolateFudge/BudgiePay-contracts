@@ -17,14 +17,16 @@ describe("Payments", function () {
     const ThePayments = await ethers.getContractFactory("Payments");
     const payments = await ThePayments.deploy(signerPubkey);
 
-    await payments.deployed();
-
     console.log("Payments are deployed to:", payments.address);
 
     const fromTwitterId = "12121212";
     const toTwitterId = "9999999";
     const amount = ethers.utils.parseEther("10");
     expect(await payments.getLastPaymentId()).to.equal(0);
+
+    const res = await payments.calculateFee(ethers.utils.parseEther("100"));
+    expect(await res[0]).to.equal(ethers.utils.parseEther("99.8"));
+    expect(await res[1]).to.equal(ethers.utils.parseEther("0.2"));
     const sign = await signPayment(
       signer2.address,
       fromTwitterId,
@@ -88,7 +90,7 @@ describe("Payments", function () {
       );
     weibalance = await signer3.getBalance();
     balance = ethers.utils.formatEther(weibalance);
-    expect(balance).to.equal("10009.999691643371670292");
+    expect(balance).to.equal("10009.979677946024643517");
 
     // Try to do the refund, should throw
 
@@ -196,7 +198,7 @@ describe("Payments", function () {
     } catch (err) {
       hasError = true;
       // Invalid ID
-      console.log(err);
+      // console.log(err);
     }
     expect(hasError).to.equal(true);
     hasError = false;
@@ -222,7 +224,7 @@ describe("Payments", function () {
     } catch (err) {
       hasError = true;
       // Invalid Signer
-      console.log(err);
+      // console.log(err);
     }
     expect(hasError).to.equal(true);
 
@@ -250,7 +252,7 @@ describe("Payments", function () {
     } catch (err) {
       hasError = true;
       // Invalid ID
-      console.log(err);
+      // console.log(err);
     }
     expect(hasError).to.equal(true);
   });
