@@ -16,16 +16,25 @@ async function main() {
   // We get the contract to deploy
   const initialSupply = "10000000";
   const maxMinted = "1000000000";
-  const TheFollowerToken = await ethers.getContractFactory("TheFollowerToken");
-  const thefollowerToken = await TheFollowerToken.deploy(
+  const TheBudgieCoin = await ethers.getContractFactory("BudgieCoin");
+  const budgiecoin = await TheBudgieCoin.deploy(
     ethers.utils.parseEther(initialSupply),
     ethers.utils.parseEther(maxMinted),
-    "0x034Ce9e3B846f507298b9a22D5999547aeE1631c"
+    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
   );
 
-  await thefollowerToken.deployed();
+  await budgiecoin.deployed();
 
-  console.log("FollowerToken is deployed to:", thefollowerToken.address);
+  console.log("BudgieCoin is deployed to:", budgiecoin.address);
+
+  const Payments = await ethers.getContractFactory("Payments");
+  const payments = await Payments.deploy(
+    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+  );
+
+  await payments.deployed();
+
+  console.log("Payments have been deployed to: ", payments.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
