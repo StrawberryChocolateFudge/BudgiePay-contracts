@@ -14,7 +14,7 @@ contract BudgieCoin is ERC20 {
         uint256 initialSupply,
         uint256 _maximumMinted,
         address signerAddress
-    ) ERC20("TFT", "TFT") {
+    ) ERC20("BGC", "BGC") {
         _mint(msg.sender, initialSupply);
         totalMinted = initialSupply;
         owner = msg.sender;
@@ -68,7 +68,7 @@ contract BudgieCoin is ERC20 {
         return ecrecover(hash, v, r, s);
     }
 
-    function mintFollowerToken(
+    function mintBudgieCoin(
         uint8 v,
         bytes32 r,
         bytes32 s,
