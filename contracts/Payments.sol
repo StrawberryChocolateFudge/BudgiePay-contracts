@@ -33,6 +33,9 @@ contract Payments is ReentrancyGuard {
     uint256 private currentEthBalance;
     uint256 private constant FEEBASE = 10000;
     uint256 private constant FEE = 20;
+    event Pay(uint256 paymentId);
+    event Withdraw(uint256 paymentId);
+    event Refund(uint256 paymentId);
 
     constructor(address signerAddress) {
         signer = signerAddress;
@@ -145,6 +148,7 @@ contract Payments is ReentrancyGuard {
         totalEthBalance += msg.value;
         currentEthBalance += msg.value;
         createPayment(from, fromTwitterId, toTwitterId, amount);
+        emit Pay(paymentIndex);
     }
 
     function createPayment(
@@ -207,6 +211,7 @@ contract Payments is ReentrancyGuard {
         payable(from).sendValue(_amount);
         payable(signer).sendValue(_fee);
         currentEthBalance -= payments[id].amount;
+        emit Withdraw(paymentIndex);
     }
 
     function refund(
@@ -242,6 +247,7 @@ contract Payments is ReentrancyGuard {
         payable(from).sendValue(_amount);
         payable(signer).sendValue(_fee);
         currentEthBalance -= payments[id].amount;
+        emit Refund(paymentIndex);
     }
 
     function getDomainHash() internal view returns (bytes32) {
@@ -302,5 +308,31 @@ contract Payments is ReentrancyGuard {
         returns (uint256, uint256)
     {
         return (totalEthBalance, currentEthBalance);
+    }
+
+    function getPaymentsPaginated(
+        uint256 first,
+        uint256 second,
+        uint256 third,
+        uint256 fourth,
+        uint256 fifth
+    )
+        external
+        view
+        returns (
+            Payment memory,
+            Payment memory,
+            Payment memory,
+            Payment memory,
+            Payment memory
+        )
+    {
+        return (
+            payments[first],
+            payments[second],
+            payments[third],
+            payments[fourth],
+            payments[fifth]
+        );
     }
 }
