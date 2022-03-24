@@ -26,7 +26,7 @@ const config: HardhatUserConfig = {
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
-    bsctestnet: {
+    harmonytestnet: {
       url: process.env.HARMONYTESTNET,
       accounts:
         process.env.HARMONYPRIVATEKEY !== undefined
