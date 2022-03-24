@@ -27,9 +27,11 @@ const config: HardhatUserConfig = {
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
     bsctestnet: {
-      url: process.env.BSCTESTNET,
+      url: process.env.HARMONYTESTNET,
       accounts:
-        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+        process.env.HARMONYPRIVATEKEY !== undefined
+          ? [process.env.HARMONYPRIVATEKEY]
+          : [],
     },
   },
   gasReporter: {
