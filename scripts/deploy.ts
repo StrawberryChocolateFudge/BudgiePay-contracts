@@ -14,13 +14,13 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const initialSupply = "10000000";
+  const initialSupply = "100000000";
   const maxMinted = "1000000000";
   const TheBudgieCoin = await ethers.getContractFactory("BudgieCoin");
   const budgiecoin = await TheBudgieCoin.deploy(
     ethers.utils.parseEther(initialSupply),
     ethers.utils.parseEther(maxMinted),
-    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+    "0x034Ce9e3B846f507298b9a22D5999547aeE1631c"
   );
 
   await budgiecoin.deployed();
@@ -29,7 +29,7 @@ async function main() {
 
   const Payments = await ethers.getContractFactory("Payments");
   const payments = await Payments.deploy(
-    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+    "0x034Ce9e3B846f507298b9a22D5999547aeE1631c"
   );
 
   await payments.deployed();
